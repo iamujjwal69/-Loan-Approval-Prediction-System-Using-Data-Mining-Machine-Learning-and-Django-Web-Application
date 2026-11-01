@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: loan-approval-prediction-system
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn --chdir django_app config.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: WEB_CONCURRENCY
+        value: "2"

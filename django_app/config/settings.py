@@ -1,7 +1,8 @@
 """
-Django settings for Loan Approval Prediction System.
+Django settings for Loan Approval Prediction System (Production & Development).
 """
 
+import os
 from pathlib import Path
 import sys
 
@@ -14,9 +15,20 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # Quick-start development settings - unsuitable for production
-SECRET_KEY = "django-insecure-loan-approval-prediction-system-key-2026"
-DEBUG = True
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY", "django-insecure-loan-approval-prediction-system-key-2026"
+)
+
+DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
+
 ALLOWED_HOSTS = ["*"]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.onrender.com",
+    "https://*.up.railway.app",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -25,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     # Local Modular Apps
     "accounts.apps.AccountsConfig",
@@ -36,6 +49,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -93,6 +107,15 @@ STATICFILES_DIRS = [
     PROJECT_ROOT / "visualizations",
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Media Files (User Uploads)
 MEDIA_URL = "/media/"
