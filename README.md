@@ -48,9 +48,17 @@ This project delivers an end-to-end, academic-grade **Loan Approval Prediction S
 
 ---
 
-## 📊 Dataset Specifications
+## 📊 Dataset Provenance & Specifications
 
-The baseline dataset is the official **Kaggle Loan Prediction Problem Dataset** containing 614 records across 13 columns:
+The baseline dataset used in this project is the official **Kaggle Loan Prediction Problem Dataset**.
+
+- **Dataset Source:** Kaggle Community Datasets
+- **Kaggle Dataset URL:** [https://www.kaggle.com/datasets/ninzaami/loan-predication](https://www.kaggle.com/datasets/ninzaami/loan-predication)
+- **Direct Raw CSV Mirror:** [https://raw.githubusercontent.com/metis-macys-66898/data622_fa2021/main/hw3/data/Loan_approval.csv](https://raw.githubusercontent.com/metis-macys-66898/data622_fa2021/main/hw3/data/Loan_approval.csv)
+- **Local Repository Path:** [`data/raw/loan_data.csv`](file:///data/raw/loan_data.csv)
+- **Sample Dimensions:** 614 observations × 13 feature columns
+
+### Attribute Dictionary
 
 | Column Name | Type | Description | Values / Range |
 | :--- | :--- | :--- | :--- |
@@ -64,7 +72,7 @@ The baseline dataset is the official **Kaggle Loan Prediction Problem Dataset** 
 | `CoapplicantIncome`| Numeric | Monthly co-applicant income | `$0` – `$41,667` |
 | `LoanAmount` | Numeric | Requested loan volume in thousands | `$9` – `$700` ($000s) |
 | `Loan_Amount_Term`| Numeric | Duration of credit in months | `12` – `480` months |
-| `Credit_History` | Numeric | Compliance with credit credit guidelines | `1.0` (Meets), `0.0` (Poor) |
+| `Credit_History` | Numeric | Compliance with credit guidelines | `1.0` (Meets), `0.0` (Poor) |
 | `Property_Area` | Categorical | Applicant residential location | `Urban`, `Semiurban`, `Rural` |
 | **`Loan_Status`** | **Target** | **Approval classification outcome** | **`Y` (Approved), `N` (Rejected)** |
 

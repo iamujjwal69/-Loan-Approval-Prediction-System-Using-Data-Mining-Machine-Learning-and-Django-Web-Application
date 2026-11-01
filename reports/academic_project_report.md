@@ -86,8 +86,8 @@ The application is structured into four decoupled layers:
 
 ## 9. Data Mining Methodology
 
-### A. Data Ingestion & Schema Audit
-The system loads the standard Kaggle Loan Prediction Dataset comprising 614 records across 13 columns. The schema validation engine ensures the presence of the 11 predictive features and the target variable `Loan_Status`.
+### A. Data Ingestion & Dataset Provenance
+The system ingests the official **Kaggle Loan Prediction Problem Dataset** (Kaggle dataset URL: `https://www.kaggle.com/datasets/ninzaami/loan-predication`), mirrored via the canonical research repository `https://raw.githubusercontent.com/metis-macys-66898/data622_fa2021/main/hw3/data/Loan_approval.csv` and stored locally at `data/raw/loan_data.csv`. The dataset comprises 614 applicant records across 13 columns. The schema validation engine ensures the presence of the 11 predictive features and the binary target variable `Loan_Status`.
 
 ### B. Missing Value Treatment
 Missing data is categorized by data type and imputed:
