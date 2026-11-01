@@ -1,0 +1,149 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Loan Approval Prediction System{% endblock %}</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Custom Theme CSS -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  {% if user.is_authenticated %}
+  <!-- Sidebar Navigation -->
+  <aside class="app-sidebar">
+    <a href="{% url 'dashboard' %}" class="sidebar-brand">
+      <div class="brand-icon">
+        <i class="bi bi-bank2"></i>
+      </div>
+      <div>
+        <div style="line-height: 1.1;">LoanPredict</div>
+        <small style="font-size: 0.68rem; color: #94a3b8; font-weight: normal;">Data Mining & ML</small>
+      </div>
+    </a>
+
+    <ul class="sidebar-menu">
+      <li class="menu-label">Main</li>
+      <li class="menu-item">
+        <a href="{% url 'dashboard' %}" class="menu-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+          <i class="bi bi-grid-1x2-fill"></i> Dashboard
+        </a>
+      </li>
+
+      <li class="menu-label">Data Mining Pipeline</li>
+      <li class="menu-item">
+        <a href="{% url 'dataset_upload' %}" class="menu-link {% if 'upload' in request.path %}active{% endif %}">
+          <i class="bi bi-cloud-arrow-up-fill"></i> Upload Dataset
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{% url 'dataset_preview_default' %}" class="menu-link {% if 'preview' in request.path %}active{% endif %}">
+          <i class="bi bi-table"></i> Dataset Preview
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{% url 'dataset_preprocessing_default' %}" class="menu-link {% if 'preprocessing' in request.path %}active{% endif %}">
+          <i class="bi bi-sliders2"></i> Preprocessing
+        </a>
+      </li>
+
+      <li class="menu-label">Analytics & Modeling</li>
+      <li class="menu-item">
+        <a href="{% url 'analytics_dashboard' %}" class="menu-link {% if request.resolver_match.app_name == 'analytics' or 'analytics' in request.path %}active{% endif %}">
+          <i class="bi bi-bar-chart-line-fill"></i> Visual Analytics
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{% url 'models_overview' %}" class="menu-link {% if 'models' in request.path %}active{% endif %}">
+          <i class="bi bi-cpu-fill"></i> Model Performance
+        </a>
+      </li>
+
+      <li class="menu-label">Inference & Audit</li>
+      <li class="menu-item">
+        <a href="{% url 'predict_loan' %}" class="menu-link {% if request.path == '/predict/' %}active{% endif %}">
+          <i class="bi bi-patch-check-fill"></i> Loan Predictor
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="{% url 'prediction_history' %}" class="menu-link {% if 'history' in request.path %}active{% endif %}">
+          <i class="bi bi-clock-history"></i> Prediction Audit
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="fw-bold text-white">{{ user.username }}</div>
+          <small class="text-secondary">{{ user.email|default:"Analyst" }}</small>
+        </div>
+        <a href="{% url 'logout' %}" class="text-danger" title="Logout">
+          <i class="bi bi-box-arrow-right fs-5"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Workspace -->
+  <div class="app-main">
+    <header class="app-navbar">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-sm btn-outline-secondary d-lg-none" id="sidebarToggle">
+          <i class="bi bi-list fs-5"></i>
+        </button>
+        <h1 class="page-title">{% block page_title %}Overview{% endblock %}</h1>
+      </div>
+      <div class="navbar-user">
+        <div class="user-badge">
+          <i class="bi bi-shield-check text-success"></i>
+          <span>Model: Logistic Regression (85.4% Acc)</span>
+        </div>
+        <a href="{% url 'predict_loan' %}" class="btn btn-sm btn-primary">
+          <i class="bi bi-plus-circle me-1"></i> New Assessment
+        </a>
+      </div>
+    </header>
+
+    <main class="app-content">
+      <!-- Flash Messages -->
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% else %}
+  <!-- Unauthenticated (Login/Register) Container -->
+  {% block auth_content %}{% endblock %}
+  {% endif %}
+
+  <!-- Bootstrap 5 Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <!-- Custom JS -->
+  <script src="{% static 'js/main.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

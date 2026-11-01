@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block title %}Dataset Preview | Loan Approval Prediction System{% endblock %}
+{% block page_title %}Dataset Inspection & Feature Summary{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <!-- Dataset Selector Toolbar -->
+  <div class="content-card mb-4">
+    <div class="card-body-custom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="fw-bold">Active Dataset:</span>
+        <span class="badge bg-primary fs-6">{{ dataset.dataset_name|default:"Baseline Kaggle Loan Dataset" }}</span>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            Switch Dataset
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{% url 'dataset_preview_default' %}">Kaggle Baseline Dataset</a></li>
+            {% for ds in all_datasets %}
+              <li><a class="dropdown-item" href="{% url 'dataset_preview' ds.id %}">{{ ds.dataset_name }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        <a href="{% url 'dataset_preprocessing' dataset.id|default:0 %}" class="btn btn-sm btn-success">
+          <i class="bi bi-sliders2 me-1"></i> Preprocessing Analysis
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Statistics Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="stat-card">
+        <span class="stat-title">Total Records</span>
+        <div class="stat-value">{{ overview.total_records }}</div>
+        <div class="stat-desc text-muted">Rows Ingested</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card">
+        <span class="stat-title">Feature Columns</span>
+        <div class="stat-value">{{ overview.total_columns }}</div>
+        <div class="stat-desc text-muted">Attributes</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card">
+        <span class="stat-title">Missing Cells</span>
+        <div class="stat-value text-warning">{{ overview.total_missing_cells }}</div>
+        <div class="stat-desc text-muted">Null Count</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card">
+        <span class="stat-title">Duplicate Rows</span>
+        <div class="stat-value text-success">{{ overview.duplicate_count }}</div>
+        <div class="stat-desc text-muted">Zero Redundancy</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Missing Values Breakdown Card -->
+  {% if overview.missing_counts %}
+  <div class="content-card mb-4">
+    <div class="card-header-custom">
+      <h2 class="card-title-custom">Missing Data Summary per Attribute</h2>
+    </div>
+    <div class="card-body-custom">
+      <div class="row g-3">
+        {% for col, cnt in overview.missing_counts.items %}
+        <div class="col-md-3 col-sm-6">
+          <div class="p-3 bg-light rounded border">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold">{{ col }}</span>
+              <span class="badge bg-danger">{{ cnt }} nulls</span>
+            </div>
+            <div class="small text-muted mt-1">Dtype: <code>{{ overview.dtypes|dict_lookup:col }}</code></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Data Records Table -->
+  <div class="content-card">
+    <div class="card-header-custom">
+      <h2 class="card-title-custom">Dataset Records Table</h2>
+      <span class="small text-muted">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    </div>
+    <div class="card-body-custom p-0">
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              {% for col in columns %}
+                <th>{{ col }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in page_obj %}
+            <tr>
+              {% for col in columns %}
+                <td>
+                  {% with val=row|dict_lookup:col %}
+                    {% if val is None %}
+                      <span class="badge bg-secondary-subtle text-secondary">NaN</span>
+                    {% elif col == 'Loan_Status' %}
+                      {% if val == 'Y' %}
+                        <span class="badge bg-success">Approved (Y)</span>
+                      {% else %}
+                        <span class="badge bg-danger">Rejected (N)</span>
+                      {% endif %}
+                    {% else %}
+                      {{ val }}
+                    {% endif %}
+                  {% endwith %}
+                </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      {% if page_obj.has_other_pages %}
+      <div class="p-3 d-flex justify-content-center">
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+            {% if page_obj.has_next %}
+              <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

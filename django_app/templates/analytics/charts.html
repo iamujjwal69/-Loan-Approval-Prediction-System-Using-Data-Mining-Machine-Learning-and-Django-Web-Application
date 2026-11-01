@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Visual Analytics | Loan Approval Prediction System{% endblock %}
+{% block page_title %}Exploratory Data Analysis & Visualizations{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <!-- Interactive Client-side Charts Row -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-4">
+      <div class="content-card h-100">
+        <div class="card-header-custom">
+          <h2 class="card-title-custom">Property Area Distribution</h2>
+        </div>
+        <div class="card-body-custom">
+          <div style="height: 250px; position: relative;">
+            <canvas id="propertyAreaChart"></canvas>
+          </div>
+          <p class="small text-muted mt-2 text-center">Semiurban areas show highest relative approval frequency.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="content-card h-100">
+        <div class="card-header-custom">
+          <h2 class="card-title-custom">Credit History Ratio</h2>
+        </div>
+        <div class="card-body-custom">
+          <div style="height: 250px; position: relative;">
+            <canvas id="creditHistoryChart"></canvas>
+          </div>
+          <p class="small text-muted mt-2 text-center">~84% of historical applicants meet credit guidelines.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="content-card h-100">
+        <div class="card-header-custom">
+          <h2 class="card-title-custom">Applicant Income Brackets</h2>
+        </div>
+        <div class="card-body-custom">
+          <div style="height: 250px; position: relative;">
+            <canvas id="incomeBracketsChart"></canvas>
+          </div>
+          <p class="small text-muted mt-2 text-center">Concentrated in the $2,500 - $7,500 monthly salary range.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- High-Resolution Static Visual Analytics Grid -->
+  <div class="content-card mb-4">
+    <div class="card-header-custom">
+      <div>
+        <h2 class="card-title-custom">High-DPI Statistical Exploratory Analysis</h2>
+        <span class="small text-muted">Generated with Seaborn & Matplotlib for university thesis and academic evaluation.</span>
+      </div>
+    </div>
+    <div class="card-body-custom">
+      <div class="row g-4">
+        {% for plot in static_plots %}
+        <div class="col-lg-6">
+          <div class="card h-100 shadow-sm border">
+            <div class="card-header bg-light py-2">
+              <span class="fw-bold small">{{ plot.title }}</span>
+            </div>
+            <div class="card-body text-center p-3">
+              <img src="{% static plot.file %}" alt="{{ plot.title }}" class="img-fluid rounded border mb-2" style="max-height: 380px; width: auto;" loading="lazy">
+              <p class="small text-muted mb-0 text-start">{{ plot.desc }}</p>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard_charts.js' %}"></script>
+{% endblock %}

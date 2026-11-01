@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Model Performance | Loan Approval Prediction System{% endblock %}
+{% block page_title %}Machine Learning Model Benchmarking & Performance{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <!-- Champion Model Banner -->
+  {% if active_model %}
+  <div class="alert alert-success border-0 shadow-sm d-flex align-items-center mb-4">
+    <i class="bi bi-trophy-fill fs-3 me-3 text-success"></i>
+    <div>
+      <div class="fw-bold fs-5">Active Champion Model: {{ active_model.model_name }}</div>
+      <div class="small">
+        Test Accuracy: <strong>{{ active_model.accuracy|floatformat:4 }}</strong> &bull;
+        F1-Score: <strong>{{ active_model.f1_score|floatformat:4 }}</strong> &bull;
+        Recall: <strong>{{ active_model.recall|floatformat:4 }}</strong> &bull;
+        5-Fold CV Mean: <strong>{{ active_model.cv_mean_accuracy|floatformat:4 }}</strong>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Models Benchmark Comparison Table -->
+  <div class="content-card mb-4">
+    <div class="card-header-custom">
+      <h2 class="card-title-custom">Candidate Classifiers Evaluation Metrics</h2>
+      <span class="badge bg-primary">Evaluated on 20% Stratified Holdout Test Split (123 records)</span>
+    </div>
+    <div class="card-body-custom p-0">
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Model Name</th>
+              <th>Status</th>
+              <th>Accuracy</th>
+              <th>Precision</th>
+              <th>Recall</th>
+              <th>F1-Score</th>
+              <th>CV Mean Accuracy</th>
+              <th>Training Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in models %}
+            <tr {% if m.is_active_model %}class="table-primary"{% endif %}>
+              <td class="fw-bold">
+                {{ m.model_name }}
+                {% if m.is_active_model %}
+                  <span class="badge bg-success ms-2"><i class="bi bi-check2"></i> Active Champion</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge bg-secondary-subtle text-secondary">Fitted & Tested</span>
+              </td>
+              <td class="fw-bold">{{ m.accuracy|floatformat:4 }}</td>
+              <td>{{ m.precision|floatformat:4 }}</td>
+              <td>{{ m.recall|floatformat:4 }}</td>
+              <td class="fw-bold text-primary">{{ m.f1_score|floatformat:4 }}</td>
+              <td>{{ m.cv_mean_accuracy|floatformat:4 }}</td>
+              <td class="small text-muted">{{ m.trained_at|date:"M d, Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Diagnostic Cards for Each Model -->
+  <div class="row g-4">
+    {% for m in models %}
+    <div class="col-lg-4">
+      <div class="content-card h-100 {% if m.is_active_model %}border-primary{% endif %}">
+        <div class="card-header-custom {% if m.is_active_model %}bg-primary text-white{% endif %}">
+          <h3 class="card-title-custom {% if m.is_active_model %}text-white{% endif %}">{{ m.model_name }}</h3>
+          {% if m.is_active_model %}
+            <span class="badge bg-white text-primary">Inference Engine</span>
+          {% endif %}
+        </div>
+        <div class="card-body-custom">
+          <!-- Metric Badges -->
+          <div class="d-flex justify-content-between mb-3 pb-2 border-bottom">
+            <span>Accuracy:</span>
+            <strong class="text-success">{{ m.accuracy|floatformat:4 }}</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-3 pb-2 border-bottom">
+            <span>F1-Score:</span>
+            <strong class="text-primary">{{ m.f1_score|floatformat:4 }}</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-3 pb-2 border-bottom">
+            <span>Precision:</span>
+            <strong>{{ m.precision|floatformat:4 }}</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-4 pb-2 border-bottom">
+            <span>Recall:</span>
+            <strong>{{ m.recall|floatformat:4 }}</strong>
+          </div>
+
+          <!-- Confusion Matrix Grid -->
+          <h6 class="fw-bold mb-2 small text-uppercase text-muted">Confusion Matrix</h6>
+          <div class="table-responsive mb-3">
+            <table class="table table-bordered table-sm text-center small mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th></th>
+                  <th>Pred Reject</th>
+                  <th>Pred Approve</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th class="table-light">True Reject (38)</th>
+                  <td class="bg-light fw-bold text-danger">TN: {{ m.confusion_matrix.0.0|default:0 }}</td>
+                  <td class="bg-light">FP: {{ m.confusion_matrix.0.1|default:0 }}</td>
+                </tr>
+                <tr>
+                  <th class="table-light">True Approve (85)</th>
+                  <td class="bg-light">FN: {{ m.confusion_matrix.1.0|default:0 }}</td>
+                  <td class="bg-light fw-bold text-success">TP: {{ m.confusion_matrix.1.1|default:0 }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Hyperparameters Breakdown -->
+          <h6 class="fw-bold mb-2 small text-uppercase text-muted">Configured Hyperparameters</h6>
+          <div class="bg-light p-2 rounded small font-monospace" style="max-height: 120px; overflow-y: auto;">
+            {% for k, v in m.hyperparameters.items %}
+              <div>{{ k }}: {{ v }}</div>
+            {% empty %}
+              <div>Default Scikit-Learn tuned parameters.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

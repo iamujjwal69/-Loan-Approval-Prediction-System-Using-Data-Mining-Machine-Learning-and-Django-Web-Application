@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Data Preprocessing | Loan Approval Prediction System{% endblock %}
+{% block page_title %}Data Mining & Preprocessing Pipeline Audit{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <!-- Action Toolbar -->
+  <div class="content-card mb-4">
+    <div class="card-body-custom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <h2 class="h5 fw-bold mb-1">Preprocessing Audit Trail</h2>
+        <span class="small text-muted">Auditing data transformations applied before machine learning model fitting.</span>
+      </div>
+      <a href="{% url 'dataset_download_clean' dataset_id %}" class="btn btn-primary">
+        <i class="bi bi-download me-1"></i> Download Preprocessed Clean CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- Before & After Comparison Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="stat-card">
+        <span class="stat-title">Records Retained</span>
+        <div class="stat-value text-success">{{ total_records_after }} / {{ total_records_before }}</div>
+        <div class="stat-desc text-muted">100% Valid Records Preserved (No Data Loss)</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card">
+        <span class="stat-title">Duplicate Records</span>
+        <div class="stat-value text-primary">{{ dupes_removed }}</div>
+        <div class="stat-desc text-muted">Redundant Rows Filtered</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card">
+        <span class="stat-title">Remaining Missing Cells</span>
+        <div class="stat-value text-success">0</div>
+        <div class="stat-desc text-muted">Zero Nulls After Imputation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Missing Value Treatment Table -->
+  <div class="content-card mb-4">
+    <div class="card-header-custom">
+      <h3 class="card-title-custom">Missing Value Imputation Strategy</h3>
+    </div>
+    <div class="card-body-custom p-0">
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Feature Column</th>
+              <th>Missing Count (Before)</th>
+              <th>Missingness (%)</th>
+              <th>Imputation Strategy</th>
+              <th>Imputed Fill Value</th>
+              <th>Status After</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in before_missing %}
+            <tr>
+              <td class="fw-bold">{{ item.Column }}</td>
+              <td class="text-danger fw-bold">{{ item.Missing_Count }}</td>
+              <td>{{ item.Percentage }}%</td>
+              <td>
+                {% if item.Dtype == 'float64' or item.Dtype == 'int64' %}
+                  <span class="badge bg-primary-subtle text-primary">Median Imputation</span>
+                {% else %}
+                  <span class="badge bg-info-subtle text-info">Mode Imputation (Most Frequent)</span>
+                {% endif %}
+              </td>
+              <td>
+                <code>
+                  {% for col_name, val in filled_values.items %}
+                    {% if col_name == item.Column %}{{ val }}{% endif %}
+                  {% endfor %}
+                </code>
+              </td>
+              <td>
+                <span class="badge bg-success-subtle text-success">
+                  <i class="bi bi-check-circle-fill me-1"></i> Resolved (0 nulls)
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outlier Detection Table (IQR Method) -->
+  <div class="content-card mb-4">
+    <div class="card-header-custom">
+      <h3 class="card-title-custom">Outlier Analysis (Interquartile Range - IQR Method)</h3>
+      <span class="badge bg-warning text-dark">IQR Factor = 1.5 &bull; Winsorization Capping</span>
+    </div>
+    <div class="card-body-custom p-0">
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Numerical Feature</th>
+              <th>Q1 (25th %)</th>
+              <th>Q3 (75th %)</th>
+              <th>IQR</th>
+              <th>Lower Bound</th>
+              <th>Upper Bound</th>
+              <th>Flagged Outliers</th>
+              <th>Outlier %</th>
+              <th>Treatment Applied</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for out in outlier_summary %}
+            <tr>
+              <td class="fw-bold">{{ out.column }}</td>
+              <td>{{ out.q1 }}</td>
+              <td>{{ out.q3 }}</td>
+              <td>{{ out.iqr }}</td>
+              <td><code>{{ out.lower_bound }}</code></td>
+              <td><code>{{ out.upper_bound }}</code></td>
+              <td class="fw-bold text-danger">{{ out.outlier_count }}</td>
+              <td>{{ out.outlier_percentage }}%</td>
+              <td>
+                <span class="badge bg-secondary-subtle text-secondary">
+                  Capped to [{{ out.lower_bound }}, {{ out.upper_bound }}]
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encoding & Feature Scaling Documentation -->
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="content-card h-100">
+        <div class="card-header-custom">
+          <h4 class="card-title-custom">Categorical Encoding Architecture</h4>
+        </div>
+        <div class="card-body-custom">
+          <p class="small text-muted">
+            Categorical string variables are transformed via Scikit-Learn <code>OneHotEncoder</code> to eliminate arbitrary ordinality assumptions.
+          </p>
+          <ul class="list-group list-group-flush small">
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>Gender</strong> (Male, Female)</span>
+              <span class="badge bg-light text-dark border">One-Hot Encoded</span>
+            </li>
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>Married</strong> (Yes, No)</span>
+              <span class="badge bg-light text-dark border">One-Hot Encoded</span>
+            </li>
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>Dependents</strong> (0, 1, 2, 3+)</span>
+              <span class="badge bg-light text-dark border">One-Hot Encoded</span>
+            </li>
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>Education</strong> (Graduate, Not Graduate)</span>
+              <span class="badge bg-light text-dark border">One-Hot Encoded</span>
+            </li>
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>Self_Employed</strong> (Yes, No)</span>
+              <span class="badge bg-light text-dark border">One-Hot Encoded</span>
+            </li>
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>Property_Area</strong> (Urban, Semiurban, Rural)</span>
+              <span class="badge bg-light text-dark border">One-Hot Encoded</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="content-card h-100">
+        <div class="card-header-custom">
+          <h4 class="card-title-custom">Numerical Feature Standardization</h4>
+        </div>
+        <div class="card-body-custom">
+          <p class="small text-muted">
+            Continuous variables are standardized using <code>StandardScaler</code>:
+            $z = \frac{x - \mu}{\sigma}$. This aligns features with different units (e.g. Income in thousands vs Term in months).
+          </p>
+          <ul class="list-group list-group-flush small">
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>ApplicantIncome</strong></span>
+              <code>Z-Score Standardized ($\mu=0, \sigma=1$)</code>
+            </li>
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>CoapplicantIncome</strong></span>
+              <code>Z-Score Standardized ($\mu=0, \sigma=1$)</code>
+            </li>
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>LoanAmount</strong></span>
+              <code>Z-Score Standardized ($\mu=0, \sigma=1$)</code>
+            </li>
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>Loan_Amount_Term</strong></span>
+              <code>Z-Score Standardized ($\mu=0, \sigma=1$)</code>
+            </li>
+            <li class="list-group-item px-0 d-flex justify-content-between">
+              <span><strong>Credit_History</strong></span>
+              <code>Binary Guidelines Indicator (1.0 / 0.0)</code>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

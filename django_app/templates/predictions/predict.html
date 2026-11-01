@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Loan Predictor | Loan Approval Prediction System{% endblock %}
+{% block page_title %}Real-Time Loan Approval Predictor{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Prediction Form Column -->
+  <div class="col-lg-7">
+    <div class="content-card">
+      <div class="card-header-custom">
+        <h2 class="card-title-custom">Applicant Information Form</h2>
+        <span class="small text-muted">All 11 features required</span>
+      </div>
+      <div class="card-body-custom">
+        <form method="post" action="{% url 'predict_loan' %}">
+          {% csrf_token %}
+
+          <!-- Personal Demographic Information -->
+          <h6 class="fw-bold text-primary mb-3">
+            <i class="bi bi-person-badge me-1"></i> Personal & Demographic Profile
+          </h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label">Gender</label>
+              {{ form.gender }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Marital Status</label>
+              {{ form.married }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Dependents</label>
+              {{ form.dependents }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Education Status</label>
+              {{ form.education }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Self Employed</label>
+              {{ form.self_employed }}
+            </div>
+          </div>
+
+          <!-- Financial & Credit Information -->
+          <h6 class="fw-bold text-primary mb-3">
+            <i class="bi bi-cash-stack me-1"></i> Financials & Requested Credit
+          </h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Applicant Monthly Income ($)</label>
+              {{ form.applicant_income }}
+              {% if form.applicant_income.errors %}<div class="text-danger small">{{ form.applicant_income.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Coapplicant Monthly Income ($)</label>
+              {{ form.coapplicant_income }}
+              {% if form.coapplicant_income.errors %}<div class="text-danger small">{{ form.coapplicant_income.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Requested Loan Amount ($000s)</label>
+              {{ form.loan_amount }}
+              <small class="text-muted">e.g. 150 = $150,000</small>
+              {% if form.loan_amount.errors %}<div class="text-danger small">{{ form.loan_amount.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Loan Term (Months)</label>
+              {{ form.loan_amount_term }}
+              <small class="text-muted">Standard: 360 months (30 years)</small>
+              {% if form.loan_amount_term.errors %}<div class="text-danger small">{{ form.loan_amount_term.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <!-- Credit Standing & Location -->
+          <h6 class="fw-bold text-primary mb-3">
+            <i class="bi bi-shield-check me-1"></i> Credit History & Geography
+          </h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Credit History Record</label>
+              {{ form.credit_history }}
+              <small class="text-muted">Primary predictor in loan scoring</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Property Geography</label>
+              {{ form.property_area }}
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 pt-3 border-top">
+            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
+              <i class="bi bi-cpu-fill me-1"></i> Run Predictive Inference
+            </button>
+            <a href="{% url 'predict_loan' %}" class="btn btn-outline-secondary py-2">
+              Reset Form
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-Time Prediction Outcome Column -->
+  <div class="col-lg-5">
+    {% if result %}
+    <div class="content-card">
+      <div class="card-header-custom">
+        <h2 class="card-title-custom">Prediction Evaluation Results</h2>
+        <span class="badge bg-secondary">Audit ID #{{ result.record_id }}</span>
+      </div>
+      <div class="card-body-custom">
+        <!-- Outcome Banner -->
+        <div class="outcome-banner {% if result.predicted_result == 'Y' %}approved{% else %}rejected{% endif %}">
+          <div class="outcome-status {% if result.predicted_result == 'Y' %}text-success{% else %}text-danger{% endif %}">
+            {% if result.predicted_result == 'Y' %}
+              <i class="bi bi-check-circle-fill"></i> LOAN APPROVED
+            {% else %}
+              <i class="bi bi-x-circle-fill"></i> LOAN REJECTED
+            {% endif %}
+          </div>
+          <div class="fw-bold text-muted">
+            Evaluation: Application is predicted as 
+            {% if result.predicted_result == 'Y' %}<strong>Eligible</strong>{% else %}<strong>Ineligible</strong>{% endif %}
+          </div>
+        </div>
+
+        <!-- Calibrated Probability Bars -->
+        <h6 class="fw-bold mb-2">Model Confidence Probabilities</h6>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between small fw-bold mb-1">
+            <span>Approval Probability:</span>
+            <span class="text-success">{{ result.probability_approved }}%</span>
+          </div>
+          <div class="progress" style="height: 12px;">
+            <div class="progress-bar bg-success" role="progressbar" style="width: {{ result.probability_approved }}%;"></div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="d-flex justify-content-between small fw-bold mb-1">
+            <span>Rejection Probability:</span>
+            <span class="text-danger">{{ result.probability_rejected }}%</span>
+          </div>
+          <div class="progress" style="height: 12px;">
+            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ result.probability_rejected }}%;"></div>
+          </div>
+        </div>
+
+        <!-- Risk Categorization -->
+        <div class="p-3 bg-light rounded border mb-4">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Risk Classification:</span>
+            <span class="badge bg-{{ result.risk_badge }} fs-6 px-3 py-2">
+              {{ result.risk_level }}
+            </span>
+          </div>
+          <p class="small text-muted mt-2 mb-0">
+            Based on the candidate model decision boundary fitted with Scikit-Learn.
+          </p>
+        </div>
+
+        <!-- Summary of Features Evaluated -->
+        <h6 class="fw-bold mb-2">Applicant Feature Snapshot</h6>
+        <div class="table-responsive small">
+          <table class="table table-sm table-bordered mb-3">
+            <tbody>
+              <tr>
+                <td class="bg-light fw-bold">Income Profile</td>
+                <td>Applicant: ${{ result.applicant_input.ApplicantIncome|floatformat:0 }} | Coapplicant: ${{ result.applicant_input.CoapplicantIncome|floatformat:0 }}</td>
+              </tr>
+              <tr>
+                <td class="bg-light fw-bold">Requested Loan</td>
+                <td>${{ result.applicant_input.LoanAmount|floatformat:0 }}k for {{ result.applicant_input.Loan_Amount_Term|floatformat:0 }} months</td>
+              </tr>
+              <tr>
+                <td class="bg-light fw-bold">Credit History</td>
+                <td>
+                  {% if result.applicant_input.Credit_History == 1.0 %}
+                    <span class="text-success fw-bold">Meets Guidelines (1.0)</span>
+                  {% else %}
+                    <span class="text-danger fw-bold">Poor History (0.0)</span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td class="bg-light fw-bold">Property Area</td>
+                <td>{{ result.applicant_input.Property_Area }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex gap-2">
+          <a href="{% url 'predict_loan' %}" class="btn btn-outline-primary btn-sm flex-fill">Evaluate Another</a>
+          <a href="{% url 'prediction_history' %}" class="btn btn-secondary btn-sm flex-fill">View Audit Log</a>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="content-card h-100 d-flex flex-column justify-content-center align-items-center text-center p-5">
+      <div class="stat-icon blue mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem;">
+        <i class="bi bi-speedometer2"></i>
+      </div>
+      <h4 class="fw-bold">Inference Engine Ready</h4>
+      <p class="text-muted small mb-4" style="max-width: 320px;">
+        Complete the applicant details form on the left and submit to trigger the trained ML pipeline and receive real-time approval predictions and risk ratings.
+      </p>
+      <div class="alert alert-light border small text-start w-100 py-2">
+        <i class="bi bi-check2-circle text-success me-1"></i> Pipeline checks credit history compliance<br>
+        <i class="bi bi-check2-circle text-success me-1"></i> Z-Score transforms income & loan metrics<br>
+        <i class="bi bi-check2-circle text-success me-1"></i> Evaluates calibrated class probabilities
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

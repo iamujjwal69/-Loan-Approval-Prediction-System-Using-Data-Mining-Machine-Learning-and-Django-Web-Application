@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Loan Approval Prediction System{% endblock %}
+{% block page_title %}Executive Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <!-- Educational Disclaimer Banner -->
+  <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4" role="alert">
+    <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+    <div>
+      <span class="fw-bold">Academic Demonstration Notice:</span>
+      This predictive engine evaluates applicant credit risk patterns using machine learning classifiers. It does not execute legal or binding financial credit commitments.
+    </div>
+  </div>
+
+  <!-- KPI Statistics Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Dataset Records</span>
+          <div class="stat-icon blue">
+            <i class="bi bi-database-fill"></i>
+          </div>
+        </div>
+        <div class="stat-value">{{ total_records }}</div>
+        <div class="stat-desc text-muted">
+          <i class="bi bi-layout-three-columns me-1"></i> {{ total_columns }} Feature Dimensions
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Active Model Accuracy</span>
+          <div class="stat-icon green">
+            <i class="bi bi-award-fill"></i>
+          </div>
+        </div>
+        <div class="stat-value text-success">{{ model_accuracy }}%</div>
+        <div class="stat-desc text-muted">
+          <span class="badge bg-success-subtle text-success me-1">F1: {{ model_f1 }}%</span> {{ active_model.model_name|default:"Logistic Regression" }}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Missing Data Cells</span>
+          <div class="stat-icon orange">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+        </div>
+        <div class="stat-value text-warning">{{ missing_cells }}</div>
+        <div class="stat-desc text-muted">
+          <i class="bi bi-magic me-1"></i> Imputed via Median / Mode
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Total Inferences</span>
+          <div class="stat-icon purple">
+            <i class="bi bi-calculator-fill"></i>
+          </div>
+        </div>
+        <div class="stat-value">{{ total_predictions }}</div>
+        <div class="stat-desc text-muted">
+          <span class="text-success fw-bold">{{ approved_count }} Approved</span> | <span class="text-danger fw-bold">{{ rejected_count }} Rejected</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Charts & Pipeline Overview Row -->
+  <div class="row g-3 mb-4">
+    <!-- Chart.js Loan Status Card -->
+    <div class="col-lg-5">
+      <div class="content-card h-100">
+        <div class="card-header-custom">
+          <h2 class="card-title-custom">Target Class Distribution (Kaggle Dataset)</h2>
+        </div>
+        <div class="card-body-custom">
+          <div style="height: 260px; position: relative;">
+            <canvas id="statusPieChart"></canvas>
+          </div>
+          <div class="text-center small text-muted mt-2">
+            Historical loan approval ratio: ~68.7% Approved vs 31.3% Rejected
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Pipeline Card -->
+    <div class="col-lg-7">
+      <div class="content-card h-100">
+        <div class="card-header-custom">
+          <h2 class="card-title-custom">Fitted Machine Learning Pipeline Architecture</h2>
+          <a href="{% url 'models_overview' %}" class="btn btn-sm btn-outline-primary">Compare All Models</a>
+        </div>
+        <div class="card-body-custom">
+          <div class="table-responsive">
+            <table class="table table-bordered mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Pipeline Component</th>
+                  <th>Method / Algorithm</th>
+                  <th>Parameters</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Numerical Imputation</strong></td>
+                  <td>SimpleImputer</td>
+                  <td><code>strategy='median'</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Numerical Scaling</strong></td>
+                  <td>StandardScaler</td>
+                  <td>Z-score normalization ($\mu=0, \sigma=1$)</td>
+                </tr>
+                <tr>
+                  <td><strong>Categorical Imputation</strong></td>
+                  <td>SimpleImputer</td>
+                  <td><code>strategy='most_frequent' (mode)</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Categorical Encoding</strong></td>
+                  <td>OneHotEncoder</td>
+                  <td><code>handle_unknown='ignore', sparse_output=False</code></td>
+                </tr>
+                <tr class="table-primary">
+                  <td><strong>Champion Estimator</strong></td>
+                  <td><strong>{{ active_model.model_name|default:"Logistic Regression" }}</strong></td>
+                  <td>Stratified 5-Fold Cross Validation</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+            <span class="small text-muted">Pipeline serialized safely via <code>joblib</code></span>
+            <a href="{% url 'predict_loan' %}" class="btn btn-primary btn-sm">
+              <i class="bi bi-play-circle-fill me-1"></i> Launch Real-Time Prediction
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Prediction Audit Table -->
+  <div class="content-card">
+    <div class="card-header-custom">
+      <h2 class="card-title-custom">Recent Real-Time Loan Assessments</h2>
+      <a href="{% url 'prediction_history' %}" class="btn btn-sm btn-outline-secondary">View Full Audit History</a>
+    </div>
+    <div class="card-body-custom p-0">
+      {% if recent_predictions %}
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Applicant Income</th>
+              <th>Loan Amount</th>
+              <th>Credit History</th>
+              <th>Property Area</th>
+              <th>Assessment Result</th>
+              <th>Approval Prob.</th>
+              <th>Risk Level</th>
+              <th>Evaluated At</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pred in recent_predictions %}
+            <tr>
+              <td class="fw-bold">#{{ pred.id }}</td>
+              <td>${{ pred.applicant_data.ApplicantIncome|floatformat:0 }}</td>
+              <td>${{ pred.applicant_data.LoanAmount|floatformat:0 }}k</td>
+              <td>
+                {% if pred.applicant_data.Credit_History == 1.0 %}
+                  <span class="badge bg-success-subtle text-success">Compliant (1.0)</span>
+                {% else %}
+                  <span class="badge bg-danger-subtle text-danger">Poor (0.0)</span>
+                {% endif %}
+              </td>
+              <td>{{ pred.applicant_data.Property_Area }}</td>
+              <td>
+                {% if pred.predicted_result == 'Y' %}
+                  <span class="badge-approved"><i class="bi bi-check-circle-fill me-1"></i> Approved</span>
+                {% else %}
+                  <span class="badge-rejected"><i class="bi bi-x-circle-fill me-1"></i> Rejected</span>
+                {% endif %}
+              </td>
+              <td class="fw-bold">{{ pred.probability_approved }}%</td>
+              <td>
+                <span class="badge {% if 'Low' in pred.risk_level %}bg-success{% elif 'Moderate' in pred.risk_level %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                  {{ pred.risk_level }}
+                </span>
+              </td>
+              <td class="text-muted small">{{ pred.created_at|date:"M d, H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="p-5 text-center text-muted">
+        <i class="bi bi-clock-history fs-1 d-block mb-2 text-secondary"></i>
+        <h5>No Prediction History Logged Yet</h5>
+        <p class="small">Submit your first applicant profile using the Real-Time Loan Predictor.</p>
+        <a href="{% url 'predict_loan' %}" class="btn btn-primary btn-sm">Start Application Evaluation</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard_charts.js' %}"></script>
+{% endblock %}

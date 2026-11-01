@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction Audit History | Loan Approval Prediction System{% endblock %}
+{% block page_title %}Applicant Prediction Audit History{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <!-- Toolbar & Filters -->
+  <div class="content-card mb-4">
+    <div class="card-body-custom py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <!-- Filter Form -->
+      <form method="get" class="d-flex align-items-center gap-2">
+        <select name="status" class="form-select form-select-sm" style="width: 160px;" onchange="this.form.submit()">
+          <option value="">All Statuses</option>
+          <option value="Y" {% if status_filter == 'Y' %}selected{% endif %}>Approved Only</option>
+          <option value="N" {% if status_filter == 'N' %}selected{% endif %}>Rejected Only</option>
+        </select>
+
+        <select name="risk" class="form-select form-select-sm" style="width: 160px;" onchange="this.form.submit()">
+          <option value="">All Risk Ratings</option>
+          <option value="Low" {% if risk_filter == 'Low' %}selected{% endif %}>Low Risk</option>
+          <option value="Moderate" {% if risk_filter == 'Moderate' %}selected{% endif %}>Moderate Risk</option>
+          <option value="High" {% if risk_filter == 'High' %}selected{% endif %}>High Risk</option>
+        </select>
+        {% if status_filter or risk_filter %}
+          <a href="{% url 'prediction_history' %}" class="btn btn-sm btn-outline-secondary">Reset Filters</a>
+        {% endif %}
+      </form>
+
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-light text-dark border px-3 py-2">Total Evaluated: {{ total_count }}</span>
+        <a href="{% url 'export_predictions_csv' %}" class="btn btn-sm btn-outline-success">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export History CSV
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Audit Table -->
+  <div class="content-card">
+    <div class="card-header-custom">
+      <h2 class="card-title-custom">Audit Trail Records</h2>
+      <span class="small text-muted">Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    </div>
+    <div class="card-body-custom p-0">
+      {% if page_obj %}
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Applicant Financials</th>
+              <th>Requested Credit</th>
+              <th>Credit History</th>
+              <th>Property Area</th>
+              <th>Assessed Result</th>
+              <th>Confidence</th>
+              <th>Risk Level</th>
+              <th>Evaluated By</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in page_obj %}
+            <tr>
+              <td class="fw-bold">#{{ item.id }}</td>
+              <td>
+                <div>Inc: ${{ item.applicant_data.ApplicantIncome|floatformat:0 }}</div>
+                <small class="text-muted">Co-Inc: ${{ item.applicant_data.CoapplicantIncome|floatformat:0 }}</small>
+              </td>
+              <td>
+                <div>${{ item.applicant_data.LoanAmount|floatformat:0 }}k</div>
+                <small class="text-muted">{{ item.applicant_data.Loan_Amount_Term|floatformat:0 }} mos</small>
+              </td>
+              <td>
+                {% if item.applicant_data.Credit_History == 1.0 %}
+                  <span class="badge bg-success-subtle text-success">Compliant (1.0)</span>
+                {% else %}
+                  <span class="badge bg-danger-subtle text-danger">Poor (0.0)</span>
+                {% endif %}
+              </td>
+              <td>{{ item.applicant_data.Property_Area }}</td>
+              <td>
+                {% if item.predicted_result == 'Y' %}
+                  <span class="badge-approved"><i class="bi bi-check-circle-fill me-1"></i> Approved</span>
+                {% else %}
+                  <span class="badge-rejected"><i class="bi bi-x-circle-fill me-1"></i> Rejected</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="fw-bold">{{ item.probability_approved }}%</div>
+                <small class="text-muted">P(Approve)</small>
+              </td>
+              <td>
+                <span class="badge {% if 'Low' in item.risk_level %}bg-success{% elif 'Moderate' in item.risk_level %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                  {{ item.risk_level }}
+                </span>
+              </td>
+              <td class="small">{{ item.user.username|default:"System" }}</td>
+              <td class="small text-muted">{{ item.created_at|date:"M d, Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+      <div class="p-3 d-flex justify-content-center">
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if risk_filter %}&risk={{ risk_filter }}{% endif %}">Previous</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+            {% if page_obj.has_next %}
+              <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if risk_filter %}&risk={{ risk_filter }}{% endif %}">Next</a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+
+      {% else %}
+      <div class="p-5 text-center text-muted">
+        <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+        <h5>No Matching Records Found</h5>
+        <p class="small">Try resetting your filters or submit a new loan prediction.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
